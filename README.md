@@ -1,5 +1,5 @@
 <div align="center">
- <h1> 🎭 Interactive Story Generator</h1>
+ <h1><img src="/public/interactive-story-generator-logo.svg" alt="Logo" width="80px"><br/>Interactive Story Generator</h1>
  <h3>Create Engaging AI-Powered Stories</h3>
  <img src="https://img.shields.io/badge/python-%3E%3D3.8-blue?style=flat&logo=python&logoColor=white"/>
  <img src="https://img.shields.io/badge/gradio-4.44.1-orange?style=flat&logo=gradio&logoColor=white"/>
