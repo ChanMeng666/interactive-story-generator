@@ -6,61 +6,58 @@ import logging
 import os
 from dotenv import load_dotenv
 
-# 加载环境变量
+# Load environment variables
 load_dotenv()
 
-# 设置日志
+# Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
 STORY_THEMES = [
-    "冒险",
-    "神秘",
-    "浪漫",
-    "历史",
-    "日常",
-    "童话"
+    "Adventure",
+    "Mystery",
+    "Romance",
+    "Historical",
+    "Slice of Life",
+    "Fairy Tale"
 ]
 
 CHARACTER_TEMPLATES = {
-    "冒险家": "一个勇敢无畏的探险家，热爱冒险与挑战。",
-    "侦探": "一个敏锐细心的侦探，善于观察和推理。",
-    "艺术家": "一个富有创造力的艺术家，对美有独特的见解。",
-    "科学家": "一个求知若渴的科学家，致力于探索未知。",
-    "普通人": "一个平凡但内心丰富的普通人。"
+    "Adventurer": "A brave and fearless explorer who loves adventure and challenges.",
+    "Detective": "A keen and observant detective skilled in observation and deduction.",
+    "Artist": "A creative artist with unique perspectives on beauty.",
+    "Scientist": "A curious scientist dedicated to exploring the unknown.",
+    "Ordinary Person": "An ordinary person with a rich inner world."
 }
 
+# Initialize story generator system prompt
+STORY_SYSTEM_PROMPT = """You are a professional story generator. Your task is to generate coherent and engaging stories based on user settings and real-time input.
 
+Key requirements:
+1. The story must maintain continuity, with each response building upon all previous plot developments
+2. Carefully analyze dialogue history to maintain consistency in character personalities and plot progression
+3. Naturally integrate new details or development directions when provided by the user
+4. Pay attention to cause and effect, ensuring each plot point has reasonable setup and explanation
+5. Make the story more vivid through environmental descriptions and character dialogues
+6. At key story points, provide hints to guide user participation in plot progression
 
-# 初始化故事生成器的系统提示
+You should not:
+1. Start a new story
+2. Ignore previously mentioned important plots or details
+3. Generate content that contradicts established settings
+4. Introduce major turns without proper setup
 
-STORY_SYSTEM_PROMPT = """你是一个专业的故事生成器。你的任务是根据用户提供的设定和实时输入，生成连贯且引人入胜的故事。
-
-关键要求：
-1. 故事必须具有连续性，每次回应都要基于之前的所有情节发展
-2. 认真分析对话历史，保持人物性格、情节走向的一致性
-3. 当用户补充新的细节或提供新的发展方向时，自然地将其整合到现有故事中
-4. 注意因果关系，确保每个情节的发生都有合理的铺垫和解释
-5. 通过环境描写、人物对话等手法，让故事更加生动
-6. 在故事发展的关键节点，可以给出一些暗示，引导用户参与情节推进
-
-你不应该：
-1. 重新开始新的故事
-2. 忽视之前提到的重要情节或细节
-3. 生成与已建立设定相矛盾的内容
-4. 突兀地引入未经铺垫的重大转折
-
-请记住：你正在创作一个持续发展的故事，而不是独立的片段。"""
+Remember: You are creating an ongoing story, not independent fragments."""
 
 
 STORY_STYLES = [
-    "奇幻",
-    "科幻",
-    "悬疑",
-    "冒险",
-    "爱情",
-    "恐怖"
+    "Fantasy",
+    "Science Fiction",
+    "Mystery",
+    "Adventure",
+    "Romance",
+    "Horror"
 ]
 
 MAX_RETRIES = 3
@@ -69,7 +66,7 @@ RETRY_DELAY = 2
 def create_client() -> InferenceClient:
     hf_token = os.getenv('HF_TOKEN')
     if not hf_token:
-        raise ValueError("HF_TOKEN 环境变量未设置")
+        raise ValueError("HF_TOKEN environment variable not set")
     return InferenceClient(
         "HuggingFaceH4/zephyr-7b-beta",
         token=hf_token
@@ -86,60 +83,60 @@ def generate_story(
     top_p: float = 0.95,
 ) -> Generator[str, None, None]:
     """
-    生成连续性的故事情节
+    Generate continuous story plot
     """
     if history is None:
         history = []
         
-    # 构建上下文摘要
+    # Build context summary
     context_summary = ""
     story_content = []
     
-    # 提取之前的故事内容
+    # Extract previous story content
     for msg in history:
         if msg["role"] == "assistant":
             story_content.append(msg["content"])
     
     if story_content:
         context_summary = "\n".join([
-            "已经发生的故事情节：",
+            "Previously in the story:",
             "---",
             "\n".join(story_content),
             "---"
         ])
     
-    # 根据是否有历史记录使用不同的提示模板
+    # Use different prompt templates based on whether there's history
     if not history:
-        # 首次生成，使用完整设定
+        # First generation, use complete settings
         prompt = f"""
-        请基于以下设定开始讲述一个故事：
+        Please start a story based on the following settings:
         
-        风格：{style}
-        主题：{theme}
-        角色：{character_desc}
-        初始场景：{scene}
+        Style: {style}
+        Theme: {theme}
+        Character: {character_desc}
+        Initial Scene: {scene}
         
-        请从这个场景开始，展开故事的开端。注意为后续发展留下铺垫。
+        Please begin from this scene and set up the story's opening. Leave room for future developments.
         """
     else:
-        # 后续生成，侧重情节延续
+        # Subsequent generation, focus on plot continuation
         prompt = f"""
         {context_summary}
         
-        故事设定提醒：
-        - 风格：{style}
-        - 主题：{theme}
-        - 主要角色：{character_desc}
+        Story settings reminder:
+        - Style: {style}
+        - Theme: {theme}
+        - Main Character: {character_desc}
         
-        用户新的输入：{scene}
+        User's new input: {scene}
         
-        请基于以上已发生的情节和用户新的输入，自然地继续发展故事。注意：
-        1. 新的发展必须与之前的情节保持连贯
-        2. 合理化用户提供的新元素
-        3. 注意人物性格的一致性
-        4. 为后续发展留下可能性
+        Please continue the story based on the previous plot and user's new input. Note:
+        1. New developments must maintain continuity with previous plot
+        2. Rationalize new elements provided by the user
+        3. Maintain consistency in character personalities
+        4. Leave possibilities for future developments
         
-        继续讲述：
+        Continue the story:
         """
     
     messages = [
@@ -164,111 +161,106 @@ def generate_story(
                     response += token
                     yield response
     except Exception as e:
-        logger.error(f"生成故事时发生错误: {str(e)}")
-        yield f"抱歉，生成故事时遇到了问题：{str(e)}\n请稍后重试。"
-
-
+        logger.error(f"Error occurred while generating story: {str(e)}")
+        yield f"Sorry, encountered an error while generating the story: {str(e)}\nPlease try again later."
 
 def summarize_story_context(history: list) -> str:
     """
-    总结当前的故事上下文，用于辅助生成
+    Summarize current story context for generation assistance
     """
     if not history:
         return ""
     
     summary_parts = []
     key_elements = {
-        "characters": set(),  # 出场人物
-        "locations": set(),   # 场景地点
-        "events": [],         # 关键事件
-        "objects": set()      # 重要物品
+        "characters": set(),  # Characters appeared
+        "locations": set(),   # Scene locations
+        "events": [],         # Key events
+        "objects": set()      # Important items
     }
     
     for msg in history:
         content = msg.get("content", "")
-        # TODO: 这里可以添加更复杂的NLP处理来提取关键信息
-        # 当前使用简单的文本累加
+        # TODO: More complex NLP processing can be added here to extract key information
+        # Currently using simple text accumulation
         if content:
             summary_parts.append(content)
     
     return "\n".join(summary_parts)
 
-
-
-# 创建故事生成器界面
-
+# Create story generator interface
 def create_demo():
     with gr.Blocks(theme=gr.themes.Soft()) as demo:
         gr.Markdown(
             """
-            # 🎭 互动式故事生成器
-            让AI为您创造独特的故事体验。您可以选择故事风格、主题,添加角色设定,
-            然后描述一个场景开始您的故事。与AI互动来继续发展故事情节!
+            # 🎭 Interactive Story Generator
+            Let AI create a unique storytelling experience for you. Choose your story style, theme, add character settings,
+            then describe a scene to start your story. Interact with AI to continue developing the plot!
             """
         )
         
         with gr.Tabs():
-            # 故事创作标签页
-            with gr.Tab("✍️ 故事创作"):
+            # Story Creation Tab
+            with gr.Tab("✍️ Story Creation"):
                 with gr.Row(equal_height=True):
-                    # 左侧控制面板
+                    # Left Control Panel
                     with gr.Column(scale=1):
                         with gr.Group():
                             style_select = gr.Dropdown(
                                 choices=STORY_STYLES,
-                                value="奇幻",
-                                label="选择故事风格",
-                                info="选择一个整体风格来定义故事的基调"
+                                value="Fantasy",
+                                label="Choose Story Style",
+                                info="Select an overall style to define the story's tone"
                             )
                             
                             theme_select = gr.Dropdown(
                                 choices=STORY_THEMES,
-                                value="冒险",
-                                label="选择故事主题",
-                                info="选择故事要重点表现的主题元素"
+                                value="Adventure",
+                                label="Choose Story Theme",
+                                info="Select the main thematic elements to focus on"
                             )
                         
                         with gr.Group():
-                            gr.Markdown("### 👤 角色设定")
+                            gr.Markdown("### 👤 Character Settings")
                             character_select = gr.Dropdown(
                                 choices=list(CHARACTER_TEMPLATES.keys()),
-                                value="冒险家",
-                                label="选择角色模板",
-                                info="选择一个预设的角色类型,或自定义描述"
+                                value="Adventurer",
+                                label="Select Character Template",
+                                info="Choose a preset character type or customize description"
                             )
                             
                             character_desc = gr.Textbox(
                                 lines=3,
-                                value=CHARACTER_TEMPLATES["冒险家"],
-                                label="角色描述",
-                                info="描述角色的性格、背景、特点等"
+                                value=CHARACTER_TEMPLATES["Adventurer"],
+                                label="Character Description",
+                                info="Describe character's personality, background, traits, etc."
                             )
                             
                         with gr.Group():
                             scene_input = gr.Textbox(
                                 lines=3,
-                                placeholder="在这里描述故事发生的场景、环境、时间等...",
-                                label="场景描述",
-                                info="详细的场景描述会让故事更加生动"
+                                placeholder="Describe the scene, environment, time, etc. here...",
+                                label="Scene Description",
+                                info="Detailed scene description will make the story more vivid"
                             )
                         
                         with gr.Row():
-                            submit_btn = gr.Button("✨ 开始故事", variant="primary", scale=2)
-                            clear_btn = gr.Button("🗑️ 清除对话", scale=1)
-                            save_btn = gr.Button("💾 保存故事", scale=1)
+                            submit_btn = gr.Button("✨ Start Story", variant="primary", scale=2)
+                            clear_btn = gr.Button("🗑️ Clear Chat", scale=1)
+                            save_btn = gr.Button("💾 Save Story", scale=1)
                     
-                    # 右侧对话区域
+                    # Right Chat Area
                     with gr.Column(scale=2):
                         chatbot = gr.Chatbot(
-                            label="故事对话",
+                            label="Story Dialogue",
                             height=600,
                             show_label=True
                         )
                         
                         status_msg = gr.Markdown("")
             
-            # 设置标签页
-            with gr.Tab("⚙️ 高级设置"):
+            # Settings Tab
+            with gr.Tab("⚙️ Advanced Settings"):
                 with gr.Group():
                     with gr.Row():
                         with gr.Column():
@@ -277,8 +269,8 @@ def create_demo():
                                 maximum=2.0,
                                 value=0.7,
                                 step=0.1,
-                                label="创意度(Temperature)",
-                                info="较高的值会让故事更有创意但可能不够连贯"
+                                label="Creativity (Temperature)",
+                                info="Higher values make story more creative but potentially less coherent"
                             )
                             
                             max_tokens = gr.Slider(
@@ -286,8 +278,8 @@ def create_demo():
                                 maximum=1024,
                                 value=512,
                                 step=64,
-                                label="最大生成长度",
-                                info="控制每次生成的文本长度"
+                                label="Maximum Generation Length",
+                                info="Control the length of each generated text"
                             )
                             
                             top_p = gr.Slider(
@@ -295,35 +287,35 @@ def create_demo():
                                 maximum=1.0,
                                 value=0.95,
                                 step=0.05,
-                                label="采样范围(Top-p)",
-                                info="控制词语选择的多样性"
+                                label="Sampling Range (Top-p)",
+                                info="Control the diversity of word choice"
                             )
         
-        # 帮助信息
-        with gr.Accordion("📖 使用帮助", open=False):
+        # Help Information
+        with gr.Accordion("📖 Usage Guide", open=False):
             gr.Markdown(
                 """
-                ## 如何使用故事生成器
-                1. 选择故事风格和主题来确定故事的整体基调
-                2. 选择预设角色模板或自定义角色描述
-                3. 描述故事发生的场景和环境
-                4. 点击"开始故事"生成开篇
-                5. 继续输入内容与AI交互,推进故事发展
+                ## How to Use the Story Generator
+                1. Choose story style and theme to set the overall tone
+                2. Select a preset character template or customize character description
+                3. Describe the story's scene and environment
+                4. Click "Start Story" to generate the opening
+                5. Continue inputting content to interact with AI and advance the story
                 
-                ## 小提示
-                - 详细的场景和角色描述会让生成的故事更加丰富
-                - 可以使用"保存故事"功能保存精彩的故事情节
-                - 在设置中调整参数可以影响故事的创意程度和连贯性
-                - 遇到不满意的情节可以使用"清除对话"重新开始
+                ## Tips
+                - Detailed scene and character descriptions will make the generated story richer
+                - Use the "Save Story" function to save memorable story plots
+                - Adjust parameters in settings to affect story creativity and coherence
+                - Use "Clear Chat" to start over if you're not satisfied with the plot
                 
-                ## 参数说明
-                - 创意度: 控制故事的创意程度,值越高创意性越强
-                - 采样范围: 控制用词的丰富程度,值越高用词越多样
-                - 最大长度: 控制每次生成的文本长度
+                ## Parameter Explanation
+                - Creativity: Controls the story's creativity level, higher values increase creativity
+                - Sampling Range: Controls vocabulary richness, higher values increase word diversity
+                - Maximum Length: Controls the length of each generated text
                 """
             )
         
-        # 更新角色描述
+        # Update character description
         def update_character_desc(template):
             return CHARACTER_TEMPLATES[template]
             
@@ -333,53 +325,57 @@ def create_demo():
             character_desc
         )
         
-        # 保存故事对话
+        # Save story dialogue
         save_btn.click(
             save_story,
-            chatbot,
-            status_msg,
+            inputs=[
+                chatbot,
+                style_select,
+                theme_select, 
+                character_desc
+            ],
+            outputs=status_msg
         )
         
-        # 用户输入处理
+        # User input processing
         def user_input(user_message, history):
             """
-            处理用户输入
+            Process user input
             Args:
-                user_message: 用户输入的消息
-                history: 聊天历史记录 [(user_msg, bot_msg), ...]
+                user_message: User's input message
+                history: Chat history [(user_msg, bot_msg), ...]
             """
             if history is None:
                 history = []
-            history.append([user_message, None])  # 添加用户消息,bot消息暂时为None
+            history.append([user_message, None])  # Add user message, bot message temporarily None
             return "", history
             
-        # AI响应处理
+        # AI response processing
         def bot_response(history, style, theme, character_desc, temperature, max_tokens, top_p):
             """
-            生成AI响应
+            Generate AI response
             Args:
-                history: 聊天历史记录 [(user_msg, bot_msg), ...]
-                style: 故事风格
-                theme: 故事主题
-                character_desc: 角色描述
-                temperature: 生成参数
-                max_tokens: 生成参数
-                top_p: 生成参数
+                history: Chat history [(user_msg, bot_msg), ...]
+                style: Story style
+                theme: Story theme
+                character_desc: Character description
+                temperature: Generation parameter
+                max_tokens: Generation parameter
+                top_p: Generation parameter
             """
             try:
-
-                # 获取用户的最后一条消息
+                # Get user's last message
                 user_message = history[-1][0] 
                 
-                # 转换历史记录格式以传递给generate_story
+                # Convert history format for generate_story
                 message_history = []
-                for user_msg, bot_msg in history[:-1]:  # 不包括最后一条
+                for user_msg, bot_msg in history[:-1]:  # Excluding the last one
                     if user_msg:
                         message_history.append({"role": "user", "content": user_msg})
                     if bot_msg:
                         message_history.append({"role": "assistant", "content": bot_msg})
                         
-                # 开始生成故事
+                # Start generating story
                 current_response = ""
                 for text in generate_story(
                     user_message,
@@ -392,21 +388,21 @@ def create_demo():
                     top_p
                 ):
                     current_response = text
-                    history[-1][1] = current_response  # 更新最后一条消息的bot回复
+                    history[-1][1] = current_response  # Update bot reply for the last message
                     yield history
                     
             except Exception as e:
-                logger.error(f"处理响应时发生错误: {str(e)}")
-                error_msg = f"抱歉，生成故事时遇到了问题。请稍后重试。"
+                logger.error(f"Error occurred while processing response: {str(e)}")
+                error_msg = f"Sorry, encountered an error while generating the story. Please try again later."
                 history[-1][1] = error_msg
                 yield history
 
         
-        # 清除对话
+        # Clear chat
         def clear_chat():
             return [], ""
         
-        # 绑定事件
+        # Bind events
         scene_input.submit(
             user_input,
             [scene_input, chatbot],
@@ -436,28 +432,59 @@ def create_demo():
         return demo
 
 
-def save_story(chatbot):
-    """保存故事对话记录"""
+def save_story(chatbot, style=None, theme=None, character_desc=None):
+    """
+    Save story dialogue record with metadata
+    Args:
+        chatbot: Chat history containing user and AI messages
+        style: Story style selected by user
+        theme: Story theme selected by user 
+        character_desc: Character description
+    Returns:
+        Status message indicating success or failure
+    """
     if not chatbot:
-        return "故事为空,无法保存"
+        return "Story is empty, cannot save"
         
     timestamp = time.strftime("%Y%m%d_%H%M%S")
-    filename = f"stories/story_{timestamp}.txt"
     
-    os.makedirs("stories", exist_ok=True)
+    # Create stories directory if it doesn't exist
+    # Use absolute path for Hugging Face Space
+    stories_dir = os.path.join(os.getcwd(), "stories")
+    os.makedirs(stories_dir, exist_ok=True)
+    
+    filename = os.path.join(stories_dir, f"story_{timestamp}.txt")
     
     try:
         with open(filename, "w", encoding="utf-8") as f:
-            for user_msg, bot_msg in chatbot:
+            # Write header with metadata
+            f.write("=== Interactive Story ===\n")
+            f.write(f"Created: {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
+            
+            if style:
+                f.write(f"Style: {style}\n")
+            if theme:
+                f.write(f"Theme: {theme}\n")
+            if character_desc:
+                f.write(f"Character: {character_desc}\n")
+            
+            f.write("\n=== Story Content ===\n\n")
+            
+            # Write conversation
+            for i, (user_msg, ai_msg) in enumerate(chatbot, 1):
+                f.write(f"--- Turn {i} ---\n")
                 if user_msg:
-                    f.write(f"用户: {user_msg}\n")
-                if bot_msg:
-                    f.write(f"AI: {bot_msg}\n\n")
-        return f"故事已保存至 {filename}"
+                    f.write(f"User: {user_msg}\n")
+                if ai_msg:
+                    f.write(f"AI: {ai_msg}\n")
+                f.write("\n")
+                
+        # Return success message with filename
+        return gr.Markdown(f"✅ Story saved successfully to: {os.path.basename(filename)}")
+        
     except Exception as e:
-        return f"保存失败: {str(e)}"
-
-
+        logger.error(f"Error saving story: {str(e)}")
+        return gr.Markdown(f"❌ Failed to save story: {str(e)}")
 
 if __name__ == "__main__":
     demo = create_demo()
