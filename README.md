@@ -8,6 +8,10 @@
 </div>
 <br/>
 
+
+https://github.com/user-attachments/assets/4ab7053f-aeb4-4c70-800a-5c4b4e8285ba
+
+
 ![screencapture-huggingface-co-spaces-ChanMeng666-interactive-story-generator-2024-12-12-13_45_22](https://github.com/user-attachments/assets/2e03f96c-8ce8-4ab2-aed2-75dd31e61eb3)
 
 ![screencapture-huggingface-co-spaces-ChanMeng666-interactive-story-generator-2024-12-12-13_45_41](https://github.com/user-attachments/assets/f1e329be-59dc-40cf-80e7-54c3eb9303e7)
