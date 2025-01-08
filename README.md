@@ -8,6 +8,11 @@
 </div>
 <br/>
 
+<br/>
+
+[![Explore GitHub Profile README Generator](https://gradient-svg-generator.vercel.app/?text=👉+Try+It+Now!+👈&height=40&template=pride-rainbow)](https://huggingface.co/spaces/ChanMeng666/interactive-story-generator)
+
+<br/>
 
 https://github.com/user-attachments/assets/4ab7053f-aeb4-4c70-800a-5c4b4e8285ba
 
