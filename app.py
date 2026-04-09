@@ -67,10 +67,7 @@ def create_client() -> InferenceClient:
     hf_token = os.getenv('HF_TOKEN')
     if not hf_token:
         raise ValueError("HF_TOKEN environment variable not set")
-    return InferenceClient(
-        "HuggingFaceH4/zephyr-7b-beta",
-        token=hf_token
-    )
+    return InferenceClient(token=hf_token)
 
 def generate_story(
     scene: str,
@@ -149,13 +146,14 @@ def generate_story(
         response = ""
         
         for message in client.chat_completion(
-            messages,
+            model="Qwen/Qwen2.5-72B-Instruct",
+            messages=messages,
             max_tokens=max_tokens,
             stream=True,
             temperature=temperature,
             top_p=top_p,
         ):
-            if hasattr(message.choices[0].delta, 'content'):
+            if message.choices and hasattr(message.choices[0].delta, 'content'):
                 token = message.choices[0].delta.content
                 if token is not None:
                     response += token
@@ -254,7 +252,8 @@ def create_demo():
                         chatbot = gr.Chatbot(
                             label="Story Dialogue",
                             height=600,
-                            show_label=True
+                            show_label=True,
+                            type="tuples"
                         )
                         
                         status_msg = gr.Markdown("")
